@@ -165,6 +165,7 @@ performRequest req = do
       let status = Client.responseStatus response
           status_code = statusCode status
           ourResponse = clientResponseToResponse id response
+      -- TODO matthias.heinzel
       unless (status_code >= 200 && status_code < 300) $
         throwError $ mkFailureResponse burl req ourResponse
       return ourResponse
@@ -181,6 +182,7 @@ performWithStreamingRequest req k = do
               status_code = statusCode status
 
           -- we throw FailureResponse in IO :(
+          -- TODO matthias.heinzel
           unless (status_code >= 200 && status_code < 300) $ do
               b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
               throwIO $ mkFailureResponse burl req (clientResponseToResponse (const b) res)

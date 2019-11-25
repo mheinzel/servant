@@ -160,6 +160,7 @@ performRequest req = do
   resp <- toResponse xhr
 
   let status = statusCode (responseStatusCode resp)
+  -- TODO matthias.heinzel
   unless (status >= 200 && status < 300) $ do
     let f b = (burl, BL.toStrict $ toLazyByteString b)
     throwError $ FailureResponse (bimap (const ()) f req) resp

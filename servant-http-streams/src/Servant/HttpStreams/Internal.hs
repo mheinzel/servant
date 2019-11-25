@@ -165,6 +165,7 @@ performRequest req = do
             let sc = Client.getStatusCode res'
             lbs <- BSL.fromChunks <$> Streams.toList body'
             let res'' = clientResponseToResponse res' lbs
+            -- TODO matthias.heinzel
             if sc >= 200 && sc < 300
             then k (Right res'')
             else k (Left (mkFailureResponse burl req res''))
@@ -179,6 +180,7 @@ performWithStreamingRequest req k = do
         Client.sendRequest conn req' body
         Client.receiveResponseRaw conn $ \res' body' -> do
             -- check status code
+            -- TODO matthias.heinzel
             let sc = Client.getStatusCode res'
             unless (sc >= 200 && sc < 300) $ do
                 lbs <- BSL.fromChunks <$> Streams.toList body'

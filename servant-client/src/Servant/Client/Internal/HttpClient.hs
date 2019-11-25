@@ -183,6 +183,7 @@ performRequest req = do
   let status = Client.responseStatus response
       status_code = statusCode status
       ourResponse = clientResponseToResponse id response
+  -- TODO matthias.heinzel
   unless (status_code >= 200 && status_code < 300) $
       throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
