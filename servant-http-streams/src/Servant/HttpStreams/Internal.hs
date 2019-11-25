@@ -75,11 +75,16 @@ data ClientEnv
     = ClientEnv
     { baseUrl    :: BaseUrl
     , connection :: Client.Connection
+    , acceptStatusCode :: Int -> Bool
     }
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: BaseUrl -> Client.Connection -> ClientEnv
-mkClientEnv = ClientEnv
+mkClientEnv burl mgr = ClientEnv burl mgr isHttpStatusSuccess
+
+-- | 'True' for status codes of 2XX.
+isHttpStatusSuccess :: Int -> Bool
+isHttpStatusSuccess s = s >= 200 && s < 300
 
 -- | Open a connection to 'BaseUrl'.
 withClientEnvIO :: BaseUrl -> (ClientEnv -> IO r) -> IO r
@@ -157,7 +162,7 @@ withClientM cm env k =
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
-    ClientEnv burl conn <- ask
+    ClientEnv burl conn acceptStatus <- ask
     let (req', body) = requestToClientRequest burl req
     x <- ClientM $ lift $ lift $ Codensity $ \k -> do
         Client.sendRequest conn req' body
@@ -165,8 +170,7 @@ performRequest req = do
             let sc = Client.getStatusCode res'
             lbs <- BSL.fromChunks <$> Streams.toList body'
             let res'' = clientResponseToResponse res' lbs
-            -- TODO matthias.heinzel
-            if sc >= 200 && sc < 300
+            if acceptStatus sc
             then k (Right res'')
             else k (Left (mkFailureResponse burl req res''))
 
@@ -174,15 +178,14 @@ performRequest req = do
 
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
 performWithStreamingRequest req k = do
-    ClientEnv burl conn <- ask
+    ClientEnv burl conn acceptStatus <- ask
     let (req', body) = requestToClientRequest burl req
     ClientM $ lift $ lift $ Codensity $ \k1 -> do
         Client.sendRequest conn req' body
         Client.receiveResponseRaw conn $ \res' body' -> do
             -- check status code
-            -- TODO matthias.heinzel
             let sc = Client.getStatusCode res'
-            unless (sc >= 200 && sc < 300) $ do
+            unless (acceptStatus sc) $ do
                 lbs <- BSL.fromChunks <$> Streams.toList body'
                 throwIO $ mkFailureResponse burl req (clientResponseToResponse res' lbs)
 

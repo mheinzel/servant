@@ -10,6 +10,7 @@ module Servant.HttpStreams
   , runClientM
   , ClientEnv(..)
   , mkClientEnv
+  , isHttpStatusSuccess
   , withClientEnvIO
   , hoistClient
   , module Servant.Client.Core.Reexport
